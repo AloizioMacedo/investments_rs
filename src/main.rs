@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use std::path::Path;
+use std::{fs::File, path::Path};
 
 use polars::prelude::*;
 mod config;
@@ -7,28 +7,88 @@ mod models;
 mod outputs;
 mod timeseries;
 
-fn get_month(s: &str) -> Result<i32> {
+fn get_month(s: &str) -> Result<&str> {
     match s {
-        "Jan" => Ok(1),
-        "Fev" => Ok(2),
-        "Mar" => Ok(3),
-        "Abr" => Ok(4),
-        "Mai" => Ok(5),
-        "Jun" => Ok(6),
-        "Jul" => Ok(7),
-        "Ago" => Ok(8),
-        "Set" => Ok(9),
-        "Out" => Ok(10),
-        "Nov" => Ok(11),
-        "Dez" => Ok(12),
+        "Jan" => Ok("01"),
+        "Fev" => Ok("02"),
+        "Mar" => Ok("03"),
+        "Abr" => Ok("04"),
+        "Mai" => Ok("05"),
+        "Jun" => Ok("06"),
+        "Jul" => Ok("07"),
+        "Ago" => Ok("08"),
+        "Set" => Ok("09"),
+        "Out" => Ok("10"),
+        "Nov" => Ok("11"),
+        "Dez" => Ok("12"),
         _ => Err(anyhow!("Can't parse this month")),
     }
 }
 
 fn main() -> Result<()> {
     process_funds()?;
+    process_cdi()?;
     models::main()?;
     outputs::main()?;
+
+    Ok(())
+}
+
+fn process_cdi() -> Result<()> {
+    let cdi_path = Path::new("data/01_raw/cdi.csv");
+
+    let mut df = CsvReader::from_path(cdi_path)?.finish()?;
+
+    _ = df.drop_in_place("Acumulado")?;
+
+    let vals: Vec<String> = Vec::new();
+    let mut df = df.melt(["Ano/Mês"], vals)?;
+
+    df.rename("variable", "month")?;
+    df.rename("value", "values")?;
+
+    df.apply("values", |x| {
+        x.str()
+            .unwrap()
+            .into_iter()
+            .map(|x| {
+                let x = x.unwrap();
+                x.replace(',', ".")
+            })
+            .collect::<StringChunked>()
+            .into_series()
+            .to_float()
+            .unwrap()
+    })?;
+
+    df.apply("values", |x| {
+        x.f64().unwrap().apply(|x| x.map(|y| y / 100.0))
+    })?;
+
+    let cast_year = df["Ano/Mês"].cast(&DataType::String)?;
+    let year = cast_year.str().unwrap();
+    let n = year.len();
+
+    let month = df["month"].str().unwrap().apply(|x| {
+        Some(std::borrow::Cow::from(
+            "-".to_string() + get_month(x.unwrap()).unwrap(),
+        ))
+    });
+
+    let days: Series = std::iter::repeat("-01").take(n).collect();
+    let days = days.str().unwrap();
+
+    let dt = year.clone() + month.clone() + days.clone();
+    let dt = dt.with_name("dt");
+
+    df.with_column(dt)?;
+    _ = df.drop_in_place("Ano/Mês")?;
+    _ = df.drop_in_place("month")?;
+
+    let path = Path::new("data/02_preprocessed/cdi.csv");
+    let file = std::fs::File::create(path)?;
+
+    CsvWriter::new(file).finish(&mut df)?;
 
     Ok(())
 }
@@ -72,8 +132,6 @@ fn process_funds() -> Result<()> {
         let months_as_numbers = s.apply(|x| {
             let month = get_month(x.expect("Months should be strings"))
                 .expect("Months should be 3-letter and in Portuguese");
-            let month = month.to_string();
-            let month = format!("{:0>2}", month);
 
             Some(std::borrow::Cow::from(month))
         });
