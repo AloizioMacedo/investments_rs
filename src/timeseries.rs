@@ -4,7 +4,7 @@ use statrs::statistics::Statistics;
 pub struct TimeSeries {
     id: String,
     multipliers: Vec<f64>,
-    returns: Vec<f64>,
+    pub returns: Vec<f64>,
 }
 
 impl TimeSeries {

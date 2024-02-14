@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use std::path::Path;
 
 use polars::prelude::*;
+mod models;
 mod timeseries;
 
 fn get_month(s: &str) -> Result<i32> {
@@ -23,7 +24,10 @@ fn get_month(s: &str) -> Result<i32> {
 }
 
 fn main() -> Result<()> {
-    process_funds()
+    process_funds()?;
+    models::main()?;
+
+    Ok(())
 }
 
 fn process_funds() -> Result<()> {
@@ -63,7 +67,8 @@ fn process_funds() -> Result<()> {
         let s = months.str().expect("Months should be strings");
 
         let months_as_numbers = s.apply(|x| {
-            let month = get_month(x.unwrap()).expect("Months should be 3-letter and in Portuguese");
+            let month = get_month(x.expect("Months should be strings"))
+                .expect("Months should be 3-letter and in Portuguese");
             let month = month.to_string();
             let month = format!("{:0>2}", month);
 
