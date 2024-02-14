@@ -6,6 +6,7 @@ use polars::{
     prelude::*,
 };
 
+use crate::config::get_config;
 use crate::timeseries::TimeSeries;
 
 pub fn load_all_funds() -> Result<DataFrame> {
@@ -53,7 +54,13 @@ pub fn convert_funds_into_timeseries(
 
 pub fn main() -> Result<()> {
     let funds = load_all_funds()?;
-    let ts = convert_funds_into_timeseries(funds, "2022-01-01", "2023-01-01");
+    let config = get_config();
+
+    let ts = convert_funds_into_timeseries(
+        funds,
+        &config.portfolio.from_date,
+        &config.portfolio.to_date,
+    );
 
     for t in ts {
         println!("Ts values: {:?}", t.returns);

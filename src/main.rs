@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use std::path::Path;
 
 use polars::prelude::*;
+mod config;
 mod models;
 mod timeseries;
 
@@ -107,8 +108,6 @@ fn process_funds() -> Result<()> {
                 .to_float()
                 .expect("Could not convert to float")
         })?;
-
-        println!("DF: {}", transposed);
 
         dataframes.push(transposed);
     }

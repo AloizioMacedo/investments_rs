@@ -8,4 +8,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.79"
 polars = { version = "0.37.0", features = ["csv", "lazy"] }
+serde = { version = "1.0.196", features = ["derive"] }
 statrs = "0.16.0"
+toml = "0.8.10"
