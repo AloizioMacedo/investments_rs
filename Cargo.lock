@@ -418,6 +418,7 @@ dependencies = [
  "anyhow",
  "polars",
  "serde",
+ "serde_json",
  "statrs",
  "toml",
 ]

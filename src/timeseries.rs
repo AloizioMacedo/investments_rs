@@ -1,6 +1,8 @@
 use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
 use statrs::statistics::Statistics;
 
+#[derive(Serialize, Deserialize)]
 pub struct TimeSeries {
     id: String,
     multipliers: Vec<f64>,

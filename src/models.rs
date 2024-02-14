@@ -1,4 +1,5 @@
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 use polars::{
@@ -52,19 +53,27 @@ pub fn convert_funds_into_timeseries(
         .collect()
 }
 
+#[derive(Serialize, Deserialize)]
+struct AllTimeSeries {
+    timeseries: Vec<TimeSeries>,
+}
+
 pub fn main() -> Result<()> {
     let funds = load_all_funds()?;
     let config = get_config();
 
-    let ts = convert_funds_into_timeseries(
+    let timeseries = convert_funds_into_timeseries(
         funds,
         &config.portfolio.from_date,
         &config.portfolio.to_date,
     );
 
-    for t in ts {
-        println!("Ts values: {:?}", t.returns);
-    }
+    let all_timeseries = AllTimeSeries { timeseries };
+
+    let jsonified_ts = serde_json::to_string(&all_timeseries)?;
+    let path = Path::new("data/03_models/models.json");
+
+    std::fs::write(path, jsonified_ts)?;
 
     Ok(())
 }
