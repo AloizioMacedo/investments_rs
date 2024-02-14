@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use std::path::Path;
 
 use polars::prelude::*;
+mod timeseries;
 
 fn get_month(s: &str) -> Result<i32> {
     match s {

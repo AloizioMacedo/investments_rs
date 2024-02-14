@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.79"
 polars = { version = "0.37.0", features = ["csv"] }
+statrs = "0.16.0"
