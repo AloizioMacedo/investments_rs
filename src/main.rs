@@ -4,6 +4,7 @@ use std::path::Path;
 use polars::prelude::*;
 mod config;
 mod models;
+mod outputs;
 mod timeseries;
 
 fn get_month(s: &str) -> Result<i32> {
@@ -27,6 +28,7 @@ fn get_month(s: &str) -> Result<i32> {
 fn main() -> Result<()> {
     process_funds()?;
     models::main()?;
+    outputs::main()?;
 
     Ok(())
 }

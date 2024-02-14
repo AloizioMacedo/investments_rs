@@ -8,7 +8,7 @@ use polars::{
 };
 
 use crate::config::get_config;
-use crate::timeseries::TimeSeries;
+use crate::timeseries::{AllTimeSeries, TimeSeries};
 
 pub fn load_all_funds() -> Result<DataFrame> {
     let path = Path::new("data/02_preprocessed/funds.csv");
@@ -51,11 +51,6 @@ pub fn convert_funds_into_timeseries(
             TimeSeries::new(name.to_string(), values)
         })
         .collect()
-}
-
-#[derive(Serialize, Deserialize)]
-struct AllTimeSeries {
-    timeseries: Vec<TimeSeries>,
 }
 
 pub fn main() -> Result<()> {
