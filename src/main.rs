@@ -22,7 +22,12 @@ fn get_month(s: &str) -> Result<i32> {
 }
 
 fn main() -> Result<()> {
+    process_funds()
+}
+
+fn process_funds() -> Result<()> {
     let raw_path = Path::new("data/01_raw");
+    let preprocessed_path = Path::new("data/02_preprocessed");
 
     let mut dataframes = Vec::new();
 
@@ -69,10 +74,10 @@ fn main() -> Result<()> {
         let year: Series = std::iter::repeat(year.to_string() + "-")
             .take(len)
             .collect();
-        let year = year.str().unwrap();
+        let year = year.str()?;
 
         let day: Series = std::iter::repeat("-01").take(len).collect();
-        let day = day.str().unwrap();
+        let day = day.str()?;
 
         let dt = year.clone() + months_as_numbers + day.clone();
         let dt = Series::from(dt);
@@ -98,8 +103,23 @@ fn main() -> Result<()> {
         })?;
 
         println!("DF: {}", transposed);
+
         dataframes.push(transposed);
     }
+
+    let mut df = dataframes
+        .into_iter()
+        .reduce(|acc, df| {
+            acc.vstack(&df)
+                .expect("Should be able to vertically stack dataframes")
+        })
+        .expect("Should have more than one dataframe");
+
+    let path = Path::new(preprocessed_path);
+
+    let file = std::fs::File::create(path.join("funds.csv"))?;
+
+    CsvWriter::new(file).finish(&mut df)?;
 
     Ok(())
 }
