@@ -109,6 +109,13 @@ fn process_funds() -> Result<()> {
                 .expect("Could not convert to float")
         })?;
 
+        transposed.apply("values", |x| {
+            x.f64()
+                .expect("'values' should be floats by now.")
+                .apply(|x| Some(x.unwrap() / 100.0))
+                .into_series()
+        })?;
+
         dataframes.push(transposed);
     }
 
