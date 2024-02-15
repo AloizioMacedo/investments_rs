@@ -1,11 +1,11 @@
 mod bin;
 
 use anyhow::Result;
-use bin::{models, outputs, preprocess};
+use bin::{outputs, preprocess, timeseries};
 
 fn main() -> Result<()> {
     preprocess::main()?;
-    models::main()?;
+    timeseries::main()?;
     outputs::main()?;
 
     Ok(())

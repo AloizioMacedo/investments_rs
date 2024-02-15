@@ -9,7 +9,7 @@ use std::{collections::HashMap, path::Path};
 
 use investments::{
     config::get_config,
-    timeseries::{AllTimeSeries, Portfolio, TimeSeries},
+    portfolio::{AllTimeSeries, Portfolio, TimeSeries},
 };
 
 struct PossibleSplits {
@@ -52,7 +52,7 @@ struct Allocation {
 }
 
 fn load_timeseries() -> Result<Vec<TimeSeries>> {
-    let path = Path::new("data/03_models/models.json");
+    let path = Path::new("data/03_timeseries/models.json");
     let timeseries = std::fs::read_to_string(path)?;
 
     let all_ts: AllTimeSeries = serde_json::from_str(&timeseries)?;
@@ -61,7 +61,7 @@ fn load_timeseries() -> Result<Vec<TimeSeries>> {
 }
 
 fn load_cdi() -> Result<TimeSeries> {
-    let path = Path::new("data/03_models/cdi.json");
+    let path = Path::new("data/03_timeseries/cdi.json");
     let timeseries = std::fs::read_to_string(path)?;
 
     Ok(serde_json::from_str(&timeseries)?)

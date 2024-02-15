@@ -7,7 +7,7 @@ use polars::{
 };
 
 use investments::config::get_config;
-use investments::timeseries::{AllTimeSeries, TimeSeries};
+use investments::portfolio::{AllTimeSeries, TimeSeries};
 
 pub fn load_all_funds() -> Result<DataFrame> {
     let path = Path::new("data/02_preprocessed/funds.csv");
@@ -91,7 +91,7 @@ pub fn main() -> Result<()> {
     let all_timeseries = AllTimeSeries { timeseries };
 
     let jsonified_ts = serde_json::to_string(&all_timeseries)?;
-    let path = Path::new("data/03_models/models.json");
+    let path = Path::new("data/03_timeseries/models.json");
 
     std::fs::write(path, jsonified_ts)?;
 
@@ -100,7 +100,7 @@ pub fn main() -> Result<()> {
         convert_cdi_into_timeseries(cdi, &config.portfolio.from_date, &config.portfolio.to_date);
 
     let jsonified_ts = serde_json::to_string(&cdi_ts)?;
-    let path = Path::new("data/03_models/cdi.json");
+    let path = Path::new("data/03_timeseries/cdi.json");
 
     std::fs::write(path, jsonified_ts)?;
 
