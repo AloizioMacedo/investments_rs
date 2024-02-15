@@ -10,6 +10,7 @@ anyhow = "1.0.79"
 geo = "0.27.0"
 indicatif = "0.17.8"
 itertools = "0.12.1"
+ordered-float = "4.2.0"
 plotly = { version = "0.8.4", features = ["kaleido"] }
 polars = { version = "0.37.0", features = ["csv", "lazy"] }
 serde = { version = "1.0.196", features = ["derive"] }

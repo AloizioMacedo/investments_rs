@@ -2,6 +2,7 @@ use anyhow::Result;
 use geo::{ConvexHull, MultiPoint, Point};
 use indicatif::ProgressBar;
 use itertools::Itertools;
+use ordered_float::OrderedFloat;
 use plotly::{common::Mode, Layout, Plot, Scatter};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::Path};
@@ -105,6 +106,34 @@ fn get_statistics_from_splits(
     }
 }
 
+fn build_splits_hashmap<'a>(
+    xs: &'a [f64],
+    ys: &'a [f64],
+    splits: &'a [Vec<f64>],
+) -> HashMap<(OrderedFloat<f64>, OrderedFloat<f64>), &'a Vec<f64>> {
+    let mut hashmap = HashMap::new();
+
+    for i in 0..xs.len() {
+        hashmap.insert((OrderedFloat(xs[i]), OrderedFloat(ys[i])), &splits[i]);
+    }
+
+    hashmap
+}
+
+fn recover_splits<'a>(
+    hm: &'a HashMap<(OrderedFloat<f64>, OrderedFloat<f64>), &'a Vec<f64>>,
+    xs: &'a [f64],
+    ys: &'a [f64],
+) -> Vec<&'a Vec<f64>> {
+    let mut splits = Vec::new();
+
+    for (x, y) in xs.iter().zip(ys) {
+        splits.push(hm[&(OrderedFloat(*x), OrderedFloat(*y))])
+    }
+
+    splits
+}
+
 fn get_best_funds() -> Vec<TimeSeries> {
     let mut funds = load_timeseries();
 
@@ -148,6 +177,12 @@ pub fn main() -> Result<()> {
     let layout = Layout::new().title("<b>Efficient Frontier</b>".into());
     plot.set_layout(layout);
 
+    let splits_hm = build_splits_hashmap(
+        &statistics.volatilities,
+        &statistics.average_returns,
+        &statistics.splits,
+    );
+
     let html = plot.to_html();
 
     let path = Path::new("data/04_outputs/efficient_frontier.html");
@@ -166,7 +201,16 @@ pub fn main() -> Result<()> {
     let x = MultiPoint::new(points);
     let ch = x.convex_hull();
     let (x, y): (Vec<f64>, Vec<f64>) = ch.exterior().points().map(|p| p.x_y()).unzip();
-    let scatter = Scatter::new(x, y).mode(Mode::Markers);
+
+    let splits_for_ch = recover_splits(&splits_hm, &x, &y);
+    let splits_as_text_for_ch = splits_for_ch
+        .iter()
+        .map(|x| format!("Splits: {:?}", x))
+        .collect();
+
+    let scatter = Scatter::new(x, y)
+        .mode(Mode::Markers)
+        .hover_text_array(splits_as_text_for_ch);
 
     let mut plot = Plot::new();
     plot.add_trace(scatter);
