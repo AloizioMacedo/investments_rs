@@ -7,7 +7,7 @@ pub struct AllTimeSeries {
     pub timeseries: Vec<TimeSeries>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TimeSeries {
     id: String,
     multipliers: Vec<f64>,
