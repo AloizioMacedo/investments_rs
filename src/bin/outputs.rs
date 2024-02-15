@@ -218,10 +218,10 @@ pub fn main() -> Result<()> {
 
     let html = plot.to_html();
 
-    let path = Path::new("data/04_outputs/efficient_frontier.html");
+    let path = Path::new("data/04_visualization/efficient_frontier.html");
     std::fs::write(path, html)?;
 
-    // let path = Path::new("data/04_outputs/efficient_frontier.png");
+    // let path = Path::new("data/04_visualization/efficient_frontier.png");
     // plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
 
     // Convex Hull
@@ -252,10 +252,10 @@ pub fn main() -> Result<()> {
 
     let html = plot.to_html();
 
-    let path = Path::new("data/04_outputs/convex_hull.html");
+    let path = Path::new("data/04_visualization/convex_hull.html");
     std::fs::write(path, html)?;
 
-    // let path = Path::new("data/04_outputs/convex_hull.png");
+    // let path = Path::new("data/04_visualization/convex_hull.png");
     // plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
 
     // Returns
@@ -274,10 +274,10 @@ pub fn main() -> Result<()> {
 
     let html = plot.to_html();
 
-    let path = Path::new("data/04_outputs/risk_return.html");
+    let path = Path::new("data/04_visualization/risk_return.html");
     std::fs::write(path, html)?;
 
-    // let path = Path::new("data/04_outputs/risk_return.png");
+    // let path = Path::new("data/04_visualization/risk_return.png");
     // plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
 
     let idx = statistics
@@ -305,7 +305,7 @@ pub fn main() -> Result<()> {
     };
 
     let jsonified_allocation = serde_json::to_string(&allocation)?;
-    let path = Path::new("data/05_reporting/allocation.json");
+    let path = Path::new("data/05_output/allocation.json");
 
     std::fs::write(path, jsonified_allocation)?;
 
