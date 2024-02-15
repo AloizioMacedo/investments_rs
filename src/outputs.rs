@@ -2,7 +2,8 @@ use anyhow::Result;
 use indicatif::ProgressBar;
 use itertools::Itertools;
 use plotly::{common::Mode, Layout, Plot, Scatter};
-use std::path::Path;
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, path::Path};
 
 use crate::{
     config::get_config,
@@ -15,6 +16,15 @@ struct Statistics {
     average_returns: Vec<f64>,
     returns_at_end: Vec<f64>,
     sharpe_ratios: Vec<f64>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Allocation {
+    allocations: HashMap<String, f64>,
+    sharpe_ratio: f64,
+    expected_returns_at_end: f64,
+    average: f64,
+    volatility: f64,
 }
 
 fn load_timeseries() -> Vec<TimeSeries> {
