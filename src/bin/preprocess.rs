@@ -43,34 +43,43 @@ pub fn process_cdi() -> Result<()> {
 
     df.apply("values", |x| {
         x.str()
-            .unwrap()
+            .expect("Column 'values' should be strings with commas instead of dots")
             .into_iter()
             .map(|x| {
-                let x = x.unwrap();
+                let x = x.expect("Column 'values' should not have missing values");
                 x.replace(',', ".")
             })
             .collect::<StringChunked>()
             .into_series()
             .to_float()
-            .unwrap()
+            .expect("Should be able to convert 'values' to floats after replacing ',' with '.'")
     })?;
 
     df.apply("values", |x| {
-        x.f64().unwrap().apply(|x| x.map(|y| y / 100.0))
+        x.f64()
+            .expect("Column 'values' should be floats after converison")
+            .apply(|x| x.map(|y| y / 100.0))
     })?;
 
     let cast_year = df["Ano/Mês"].cast(&DataType::String)?;
-    let year = cast_year.str().unwrap();
+    let year = cast_year
+        .str()
+        .expect("Column 'Ano/Mês' should be strings after data cast.");
     let n = year.len();
 
-    let month = df["month"].str().unwrap().apply(|x| {
-        Some(std::borrow::Cow::from(
-            "-".to_string() + get_month(x.unwrap()).unwrap(),
-        ))
-    });
+    let month = df["month"]
+        .str()
+        .expect("Column 'month' should be strings representing months, e.g. 'Jan', 'Fev' etc.")
+        .apply(|x| {
+            Some(std::borrow::Cow::from(
+                "-".to_string()
+                    + get_month(x.expect("Column 'month' should not have missing values"))
+                        .expect("Column 'month' should be a month such as 'Jan', 'Fev' etc."),
+            ))
+        });
 
     let days: Series = std::iter::repeat("-01").take(n).collect();
-    let days = days.str().unwrap();
+    let days = days.str().expect("Series 'days' should consist of strings");
 
     let dt = year.clone() + month.clone() + days.clone();
     let dt = dt.with_name("dt");
@@ -154,8 +163,9 @@ pub fn process_funds() -> Result<()> {
 
         transposed.with_column(cnpj)?;
 
-        transposed.apply("values", |x| {
-            x.str()
+        transposed.apply("values", |series| {
+            series
+                .str()
                 .expect("'values' column was not a string.")
                 .into_iter()
                 .map(|value| value.map(|x| x.replace(',', ".")))
@@ -165,10 +175,11 @@ pub fn process_funds() -> Result<()> {
                 .expect("Could not convert to float")
         })?;
 
-        transposed.apply("values", |x| {
-            x.f64()
+        transposed.apply("values", |series| {
+            series
+                .f64()
                 .expect("'values' should be floats by now.")
-                .apply(|x| Some(x.unwrap() / 100.0))
+                .apply(|entry| entry.map(|x| x / 100.0))
                 .into_series()
         })?;
 
