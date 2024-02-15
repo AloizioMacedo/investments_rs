@@ -1,8 +1,7 @@
-use anyhow::Result;
+mod bin;
 
-mod models;
-mod outputs;
-mod preprocess;
+use anyhow::Result;
+use bin::{models, outputs, preprocess};
 
 fn main() -> Result<()> {
     preprocess::main()?;
