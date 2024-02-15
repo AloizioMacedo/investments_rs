@@ -29,20 +29,20 @@ struct Allocation {
     volatility: f64,
 }
 
-fn load_timeseries() -> Vec<TimeSeries> {
+fn load_timeseries() -> Result<Vec<TimeSeries>> {
     let path = Path::new("data/03_models/models.json");
-    let timeseries = std::fs::read_to_string(path).unwrap();
+    let timeseries = std::fs::read_to_string(path)?;
 
-    let all_ts: AllTimeSeries = serde_json::from_str(&timeseries).unwrap();
+    let all_ts: AllTimeSeries = serde_json::from_str(&timeseries)?;
 
-    all_ts.timeseries
+    Ok(all_ts.timeseries)
 }
 
-fn load_cdi() -> TimeSeries {
+fn load_cdi() -> Result<TimeSeries> {
     let path = Path::new("data/03_models/cdi.json");
-    let timeseries = std::fs::read_to_string(path).unwrap();
+    let timeseries = std::fs::read_to_string(path)?;
 
-    serde_json::from_str(&timeseries).unwrap()
+    Ok(serde_json::from_str(&timeseries)?)
 }
 
 fn get_possible_splits() -> impl Iterator<Item = Vec<f64>> {
@@ -86,7 +86,9 @@ fn get_statistics_from_splits(
 
     let pb = ProgressBar::new(possible_splits.len() as u64);
     for possible_split in possible_splits {
-        let p = Portfolio::new(funds.to_vec(), possible_split.clone()).unwrap();
+        let p = Portfolio::new(funds.to_vec(), possible_split.clone()).expect(
+            "Number of funds and splits should have the same length when building Portfolio",
+        );
 
         volatilities.push(p.std());
         average_returns.push(p.average());
@@ -134,25 +136,25 @@ fn recover_splits<'a>(
     splits
 }
 
-fn get_best_funds() -> Vec<TimeSeries> {
-    let mut funds = load_timeseries();
+fn get_best_funds() -> Result<Vec<TimeSeries>> {
+    let mut funds = load_timeseries()?;
 
     funds.sort_by(|t1, t2| {
         t1.average_returns()
             .partial_cmp(&t2.average_returns())
-            .unwrap()
+            .expect("No NaNs should exist for ordering.")
     });
     funds.reverse();
 
     let config = get_config();
     let n = config.portfolio.number_of_funds;
 
-    funds[0..n].to_vec()
+    Ok(funds[0..n].to_vec())
 }
 
 pub fn main() -> Result<()> {
-    let funds = get_best_funds();
-    let cdi = load_cdi();
+    let funds = get_best_funds()?;
+    let cdi = load_cdi()?;
     let possible_splits = get_possible_splits();
 
     let statistics = get_statistics_from_splits(&cdi, &funds, possible_splits);
@@ -251,8 +253,8 @@ pub fn main() -> Result<()> {
         .sharpe_ratios
         .iter()
         .enumerate()
-        .max_by(|(_, x), (_, y)| x.partial_cmp(y).unwrap())
-        .unwrap()
+        .max_by(|(_, x), (_, y)| x.partial_cmp(y).expect("No NaNs should exist for ordering"))
+        .expect("At least one sharpe ratio should exist to get the best one.")
         .0;
 
     let best_split = &statistics.splits[idx];
