@@ -7,7 +7,7 @@ use plotly::{common::Mode, Layout, Plot, Scatter};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::Path};
 
-use crate::{
+use investments::{
     config::get_config,
     timeseries::{AllTimeSeries, Portfolio, TimeSeries},
 };

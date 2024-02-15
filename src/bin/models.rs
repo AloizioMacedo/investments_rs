@@ -6,8 +6,8 @@ use polars::{
     prelude::*,
 };
 
-use crate::config::get_config;
-use crate::timeseries::{AllTimeSeries, TimeSeries};
+use investments::config::get_config;
+use investments::timeseries::{AllTimeSeries, TimeSeries};
 
 pub fn load_all_funds() -> Result<DataFrame> {
     let path = Path::new("data/02_preprocessed/funds.csv");
