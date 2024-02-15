@@ -113,6 +113,7 @@ fn get_best_funds() -> Vec<TimeSeries> {
             .partial_cmp(&t2.average_returns())
             .unwrap()
     });
+    funds.reverse();
 
     let config = get_config();
     let n = config.portfolio.number_of_funds;
@@ -152,8 +153,8 @@ pub fn main() -> Result<()> {
     let path = Path::new("data/04_outputs/efficient_frontier.html");
     std::fs::write(path, html)?;
 
-    let path = Path::new("data/04_outputs/efficient_frontier.png");
-    plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
+    // let path = Path::new("data/04_outputs/efficient_frontier.png");
+    // plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
 
     // Convex Hull
     let points = statistics
@@ -177,8 +178,8 @@ pub fn main() -> Result<()> {
     let path = Path::new("data/04_outputs/convex_hull.html");
     std::fs::write(path, html)?;
 
-    let path = Path::new("data/04_outputs/convex_hull.png");
-    plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
+    // let path = Path::new("data/04_outputs/convex_hull.png");
+    // plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
 
     // Returns
     let scatter = Scatter::new(
@@ -199,8 +200,8 @@ pub fn main() -> Result<()> {
     let path = Path::new("data/04_outputs/risk_return.html");
     std::fs::write(path, html)?;
 
-    let path = Path::new("data/04_outputs/risk_return.png");
-    plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
+    // let path = Path::new("data/04_outputs/risk_return.png");
+    // plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
 
     let idx = statistics
         .sharpe_ratios
