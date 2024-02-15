@@ -12,6 +12,28 @@ use investments::{
     timeseries::{AllTimeSeries, Portfolio, TimeSeries},
 };
 
+struct PossibleSplits {
+    possible_splits: Vec<f64>, // Stored sequentially for optimization
+    split_len: usize,
+}
+
+impl PossibleSplits {
+    fn iterate_over_splits(&self) -> impl Iterator<Item = &[f64]> {
+        let mut idx = 0;
+
+        std::iter::from_fn(move || {
+            if idx == self.possible_splits.len() {
+                return None;
+            }
+
+            let next = &self.possible_splits[idx..idx + self.split_len];
+
+            idx += self.split_len;
+            Some(next)
+        })
+    }
+}
+
 struct Statistics {
     splits: Vec<Vec<f64>>,
     volatilities: Vec<f64>,
@@ -45,7 +67,7 @@ fn load_cdi() -> Result<TimeSeries> {
     Ok(serde_json::from_str(&timeseries)?)
 }
 
-fn get_possible_splits() -> impl Iterator<Item = Vec<f64>> {
+fn get_possible_splits() -> PossibleSplits {
     let config = get_config();
 
     let min_gran = config.portfolio.split_granularity;
@@ -55,26 +77,31 @@ fn get_possible_splits() -> impl Iterator<Item = Vec<f64>> {
 
     let granularity = (0..total).map(|x| x as f64 * min_gran).collect_vec();
 
-    std::iter::repeat(granularity)
+    let mut possible_splits = Vec::with_capacity(granularity.len().pow((n_funds - 1) as u32));
+
+    for mut split in std::iter::repeat(granularity)
         .take(n_funds - 1)
         .multi_cartesian_product()
-        .filter_map(|mut x| {
-            let s = x.iter().sum::<f64>();
+    {
+        let s = split.iter().sum::<f64>();
 
-            if s <= 1.0 {
-                x.push(1.0 - s);
+        if s <= 1.0 {
+            split.push(1.0 - s);
 
-                Some(x)
-            } else {
-                None
-            }
-        })
+            possible_splits.extend(split);
+        }
+    }
+
+    PossibleSplits {
+        possible_splits,
+        split_len: n_funds,
+    }
 }
 
 fn get_statistics_from_splits(
     risk_free: &TimeSeries,
     funds: &[TimeSeries],
-    possible_splits: impl Iterator<Item = Vec<f64>>,
+    possible_splits: PossibleSplits,
 ) -> Statistics {
     let mut splits = Vec::new();
     let mut volatilities = Vec::new();
@@ -82,11 +109,13 @@ fn get_statistics_from_splits(
     let mut returns_at_end = Vec::new();
     let mut sharpe_ratios = Vec::new();
 
-    let possible_splits = possible_splits.collect_vec();
+    let possible_splits_iter = possible_splits.iterate_over_splits();
 
-    let pb = ProgressBar::new(possible_splits.len() as u64);
-    for possible_split in possible_splits {
-        let p = Portfolio::new(funds.to_vec(), possible_split.clone()).expect(
+    let pb = ProgressBar::new(
+        (possible_splits.possible_splits.len() / possible_splits.split_len) as u64,
+    );
+    for possible_split in possible_splits_iter {
+        let p = Portfolio::new(funds, possible_split).expect(
             "Number of funds and splits should have the same length when building Portfolio",
         );
 
@@ -94,7 +123,7 @@ fn get_statistics_from_splits(
         average_returns.push(p.average());
         returns_at_end.push(p.calculate_value_at_end(1.0));
         sharpe_ratios.push(p.sharpe_ratio(risk_free));
-        splits.push(possible_split);
+        splits.push(possible_split.to_vec());
         pb.inc(1);
     }
     pb.finish();

@@ -58,13 +58,11 @@ impl TimeSeries {
 }
 
 pub struct Portfolio {
-    _ts: Vec<TimeSeries>,
-    _split: Vec<f64>,
     final_ts: TimeSeries,
 }
 
 impl Portfolio {
-    pub fn new(ts: Vec<TimeSeries>, split: Vec<f64>) -> Result<Portfolio> {
+    pub fn new(ts: &[TimeSeries], split: &[f64]) -> Result<Portfolio> {
         if ts.len() != split.len() {
             return Err(anyhow!("'ts' and 'split' have different lengths"));
         }
@@ -75,7 +73,7 @@ impl Portfolio {
 
         let returns =
             ts.iter()
-                .zip(&split)
+                .zip(split)
                 .fold(vec![0.0; ts[0].returns.len()], |mut acc, (ts, split)| {
                     for (i, multiplier) in ts.returns.iter().enumerate() {
                         acc[i] += split * multiplier
@@ -91,11 +89,7 @@ impl Portfolio {
 
         let final_ts = TimeSeries::new(id, returns);
 
-        Ok(Portfolio {
-            _ts: ts,
-            _split: split,
-            final_ts,
-        })
+        Ok(Portfolio { final_ts })
     }
 
     pub fn std(&self) -> f64 {
