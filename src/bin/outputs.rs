@@ -73,9 +73,11 @@ fn get_possible_splits() -> PossibleSplits {
     let min_gran = config.portfolio.split_granularity;
     let n_funds = config.portfolio.number_of_funds;
 
-    let total = (1.0 / min_gran) as usize;
+    let total = (1.0 / min_gran).round() as usize;
 
-    let granularity = (0..total).map(|x| x as f64 * min_gran).collect_vec();
+    let granularity = (0..=total)
+        .map(|i| (i as f64 * min_gran * 10000.0).round() / 10000.0)
+        .collect_vec();
 
     let mut possible_splits = Vec::with_capacity(granularity.len().pow((n_funds - 1) as u32));
 
