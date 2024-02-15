@@ -79,6 +79,8 @@ pub fn process_cdi() -> Result<()> {
     _ = df.drop_in_place("Ano/Mês")?;
     _ = df.drop_in_place("month")?;
 
+    df.sort_in_place(["dt"], vec![false], true)?;
+
     let path = Path::new("data/02_preprocessed/cdi.csv");
     let file = std::fs::File::create(path)?;
 
@@ -180,6 +182,8 @@ pub fn process_funds() -> Result<()> {
                 .expect("Should be able to vertically stack dataframes")
         })
         .expect("Should have more than one dataframe");
+
+    df.sort_in_place(["CNPJ_Fundo", "dt"], vec![false, false], true)?;
 
     let path = Path::new(preprocessed_path);
 
