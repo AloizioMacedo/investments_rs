@@ -1,4 +1,5 @@
 use anyhow::Result;
+use geo::{ConvexHull, MultiPoint, Point};
 use indicatif::ProgressBar;
 use itertools::Itertools;
 use plotly::{common::Mode, Layout, Plot, Scatter};
@@ -116,9 +117,14 @@ pub fn main() -> Result<()> {
         .map(|x| format!("Split: {:?}", x))
         .collect::<Vec<_>>();
 
-    let scatter = Scatter::new(statistics.volatilities.clone(), statistics.average_returns)
-        .mode(Mode::Markers)
-        .hover_text_array(splits_as_text.clone());
+    // Efficient Frontier
+
+    let scatter = Scatter::new(
+        statistics.volatilities.clone(),
+        statistics.average_returns.clone(),
+    )
+    .mode(Mode::Markers)
+    .hover_text_array(splits_as_text.clone());
 
     let mut plot = Plot::new();
 
@@ -134,9 +140,38 @@ pub fn main() -> Result<()> {
     let path = Path::new("data/04_outputs/efficient_frontier.png");
     plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
 
-    let scatter = Scatter::new(statistics.volatilities, statistics.returns_at_end)
-        .mode(Mode::Markers)
-        .hover_text_array(splits_as_text);
+    // Convex Hull
+    let points = statistics
+        .volatilities
+        .iter()
+        .zip(&statistics.average_returns)
+        .map(|(x, y)| Point::new(*x, *y))
+        .collect();
+    let x = MultiPoint::new(points);
+    let ch = x.convex_hull();
+    let (x, y): (Vec<f64>, Vec<f64>) = ch.exterior().points().map(|p| p.x_y()).unzip();
+    let scatter = Scatter::new(x, y).mode(Mode::Markers);
+
+    let mut plot = Plot::new();
+    plot.add_trace(scatter);
+    let layout = Layout::new().title("<b>Convex hull</b>".into());
+    plot.set_layout(layout);
+
+    let html = plot.to_html();
+
+    let path = Path::new("data/04_outputs/convex_hull.html");
+    std::fs::write(path, html)?;
+
+    let path = Path::new("data/04_outputs/convex_hull.png");
+    plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
+
+    // Returns
+    let scatter = Scatter::new(
+        statistics.volatilities.clone(),
+        statistics.returns_at_end.clone(),
+    )
+    .mode(Mode::Markers)
+    .hover_text_array(splits_as_text);
 
     let mut plot = Plot::new();
 
@@ -151,6 +186,35 @@ pub fn main() -> Result<()> {
 
     let path = Path::new("data/04_outputs/risk_return.png");
     plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
+
+    let idx = statistics
+        .sharpe_ratios
+        .iter()
+        .enumerate()
+        .max_by(|(_, x), (_, y)| x.partial_cmp(y).unwrap())
+        .unwrap()
+        .0;
+
+    let best_split = &statistics.splits[idx];
+    let allocations = HashMap::from_iter(
+        funds
+            .iter()
+            .map(|f| f.id.to_string())
+            .zip(best_split.iter().copied()),
+    );
+
+    let allocation = Allocation {
+        allocations,
+        average: statistics.average_returns[idx],
+        expected_returns_at_end: statistics.returns_at_end[idx],
+        sharpe_ratio: statistics.sharpe_ratios[idx],
+        volatility: statistics.volatilities[idx],
+    };
+
+    let jsonified_allocation = serde_json::to_string(&allocation)?;
+    let path = Path::new("data/05_reporting/allocation.json");
+
+    std::fs::write(path, jsonified_allocation)?;
 
     Ok(())
 }

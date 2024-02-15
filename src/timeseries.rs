@@ -9,7 +9,7 @@ pub struct AllTimeSeries {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TimeSeries {
-    id: String,
+    pub id: String,
     multipliers: Vec<f64>,
     pub returns: Vec<f64>,
 }
