@@ -105,8 +105,23 @@ fn get_statistics_from_splits(
     }
 }
 
+fn get_best_funds() -> Vec<TimeSeries> {
+    let mut funds = load_timeseries();
+
+    funds.sort_by(|t1, t2| {
+        t1.average_returns()
+            .partial_cmp(&t2.average_returns())
+            .unwrap()
+    });
+
+    let config = get_config();
+    let n = config.portfolio.number_of_funds;
+
+    funds[0..n].to_vec()
+}
+
 pub fn main() -> Result<()> {
-    let funds = load_timeseries();
+    let funds = get_best_funds();
     let cdi = load_cdi();
     let possible_splits = get_possible_splits();
 

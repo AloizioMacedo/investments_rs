@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use std::{fs::File, path::Path};
+use std::path::Path;
 
 use polars::prelude::*;
 mod config;
