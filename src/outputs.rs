@@ -1,6 +1,7 @@
 use anyhow::Result;
 use indicatif::ProgressBar;
 use itertools::Itertools;
+use plotly::{common::Mode, Layout, Plot, Scatter};
 use std::path::Path;
 
 use crate::{
@@ -45,9 +46,16 @@ fn get_possible_splits() -> impl Iterator<Item = Vec<f64>> {
     std::iter::repeat(granularity)
         .take(n_funds - 1)
         .multi_cartesian_product()
-        .map(|mut x| {
-            x.push(1.0 - x.iter().sum::<f64>());
-            x
+        .filter_map(|mut x| {
+            let s = x.iter().sum::<f64>();
+
+            if s <= 1.0 {
+                x.push(1.0 - s);
+
+                Some(x)
+            } else {
+                None
+            }
         })
 }
 
@@ -91,7 +99,48 @@ pub fn main() -> Result<()> {
     let cdi = load_cdi();
     let possible_splits = get_possible_splits();
 
-    _ = get_statistics_from_splits(&cdi, &funds, possible_splits);
+    let statistics = get_statistics_from_splits(&cdi, &funds, possible_splits);
+    let splits_as_text = statistics
+        .splits
+        .iter()
+        .map(|x| format!("Split: {:?}", x))
+        .collect::<Vec<_>>();
+
+    let scatter = Scatter::new(statistics.volatilities.clone(), statistics.average_returns)
+        .mode(Mode::Markers)
+        .hover_text_array(splits_as_text.clone());
+
+    let mut plot = Plot::new();
+
+    plot.add_trace(scatter);
+    let layout = Layout::new().title("<b>Efficient Frontier</b>".into());
+    plot.set_layout(layout);
+
+    let html = plot.to_html();
+
+    let path = Path::new("data/04_outputs/efficient_frontier.html");
+    std::fs::write(path, html)?;
+
+    let path = Path::new("data/04_outputs/efficient_frontier.png");
+    plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
+
+    let scatter = Scatter::new(statistics.volatilities, statistics.returns_at_end)
+        .mode(Mode::Markers)
+        .hover_text_array(splits_as_text);
+
+    let mut plot = Plot::new();
+
+    plot.add_trace(scatter);
+    let layout = Layout::new().title("<b>Risk / Return</b>".into());
+    plot.set_layout(layout);
+
+    let html = plot.to_html();
+
+    let path = Path::new("data/04_outputs/risk_return.html");
+    std::fs::write(path, html)?;
+
+    let path = Path::new("data/04_outputs/risk_return.png");
+    plot.write_image(path, plotly::ImageFormat::PNG, 1920, 1080, 1.0);
 
     Ok(())
 }

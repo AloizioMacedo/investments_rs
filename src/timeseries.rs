@@ -58,8 +58,8 @@ impl TimeSeries {
 }
 
 pub struct Portfolio {
-    ts: Vec<TimeSeries>,
-    split: Vec<f64>,
+    _ts: Vec<TimeSeries>,
+    _split: Vec<f64>,
     final_ts: TimeSeries,
 }
 
@@ -92,8 +92,8 @@ impl Portfolio {
         let final_ts = TimeSeries::new(id, returns);
 
         Ok(Portfolio {
-            ts,
-            split,
+            _ts: ts,
+            _split: split,
             final_ts,
         })
     }
