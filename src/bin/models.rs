@@ -37,7 +37,7 @@ pub fn convert_funds_into_timeseries(
     cnpjs
         .into_iter()
         .map(|name| {
-            let name = name.unwrap();
+            let name = name.expect("CNPJ has to be present for all rows");
             let df = lazy
                 .clone()
                 .filter(col("CNPJ_Fundo").eq(lit(name)))
@@ -48,9 +48,9 @@ pub fn convert_funds_into_timeseries(
 
             let values = df["values"]
                 .f64()
-                .unwrap()
+                .expect("Values should be floats")
                 .into_iter()
-                .map(|x| x.unwrap())
+                .map(|x| x.expect("Value should be present in all rows for column 'values'"))
                 .collect();
 
             TimeSeries::new(name.to_string(), values)
@@ -70,9 +70,9 @@ pub fn convert_cdi_into_timeseries(df: DataFrame, from_date: &str, to_date: &str
 
     let values = df["values"]
         .f64()
-        .unwrap()
+        .expect("Value should be floats")
         .into_iter()
-        .map(|x| x.unwrap())
+        .map(|x| x.expect("Value should be present in all rows for column 'values'"))
         .collect();
 
     TimeSeries::new("_cdi".to_string(), values)
