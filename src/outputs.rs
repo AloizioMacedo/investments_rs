@@ -43,9 +43,12 @@ fn get_possible_splits() -> impl Iterator<Item = Vec<f64>> {
     let granularity = (0..total).map(|x| x as f64 * min_gran).collect_vec();
 
     std::iter::repeat(granularity)
-        .take(n_funds)
+        .take(n_funds - 1)
         .multi_cartesian_product()
-        .filter(|x| x.iter().sum::<f64>() == 1.0)
+        .map(|mut x| {
+            x.push(1.0 - x.iter().sum::<f64>());
+            x
+        })
 }
 
 fn get_statistics_from_splits(
