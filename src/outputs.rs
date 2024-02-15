@@ -159,7 +159,7 @@ pub fn main() -> Result<()> {
     let splits_as_text = statistics
         .splits
         .iter()
-        .map(|x| format!("Split: {:?}", x))
+        .map(|x| format!("Split: {:.2?}", x))
         .collect::<Vec<_>>();
 
     // Efficient Frontier
@@ -205,7 +205,7 @@ pub fn main() -> Result<()> {
     let splits_for_ch = recover_splits(&splits_hm, &x, &y);
     let splits_as_text_for_ch = splits_for_ch
         .iter()
-        .map(|x| format!("Splits: {:?}", x))
+        .map(|x| format!("Splits: {:.2?}", x))
         .collect();
 
     let scatter = Scatter::new(x, y)
